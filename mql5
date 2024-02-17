@@ -1,0 +1,99 @@
+
+//+------------------------------------------------------------------+
+//|                  Oyen Gold Scalping EA                           |
+//|       Developer: Forex Robot Easy Team                           |
+//|       Website: forexroboteasy.com                                |
+//+------------------------------------------------------------------+
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <CustomIndicator.mqh>
+
+// Define constants
+#define SYMBOL 'XAUUSD' // Symbol to trade
+#define LOTS 0.1       // Lot size
+#define STOP_LOSS 100  // Stop loss in points
+#define TRAILING_STEP 20 // Trailing step in points
+
+// Create an instance of the custom indicator
+CustomIndicator sdea;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Initialize the custom indicator
+   sdea.Init();
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Deinitialize the custom indicator
+   sdea.Deinit();
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Check if there is a signal from the custom indicator
+   if(sdea.Signal())
+   {
+      // Get the direction and momentum of the trend from the custom indicator
+      int trendDirection = sdea.GetTrendDirection();
+      double trendMomentum = sdea.GetTrendMomentum();
+
+      // Check if the trend is strong enough to open a trade
+      if(trendMomentum >= 0.5)
+      {
+         // Check the direction of the trend
+         if(trendDirection == TREND_UP)
+         {
+            // Open a buy trade
+            double entryPrice = SymbolInfoDouble(SYMBOL, SYMBOL_ASK);
+            double stopLossPrice = entryPrice - STOP_LOSS * Point();
+            double takeProfitPrice = entryPrice + STOP_LOSS * Point();
+            int ticket = OrderSend(SYMBOL, OP_BUY, LOTS, entryPrice, 0, stopLossPrice, takeProfitPrice, '', MagicNumber, 0, Green);
+
+            // Set trailing stop
+            if(ticket > 0)
+            {
+               OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES);
+               OrderSetTrailingStop(TRAILING_STEP * Point());
+            }
+         }
+         else if(trendDirection == TREND_DOWN)
+         {
+            // Open a sell trade
+            double entryPrice = SymbolInfoDouble(SYMBOL, SYMBOL_BID);
+            double stopLossPrice = entryPrice + STOP_LOSS * Point();
+            double takeProfitPrice = entryPrice - STOP_LOSS * Point();
+            int ticket = OrderSend(SYMBOL, OP_SELL, LOTS, entryPrice, 0, stopLossPrice, takeProfitPrice, '', MagicNumber, 0, Red);
+
+            // Set trailing stop
+            if(ticket > 0)
+            {
+               OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES);
+               OrderSetTrailingStop(TRAILING_STEP * Point());
+            }
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                            |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+   // Nothing to do here
+}
+
+//+------------------------------------------------------------------+
